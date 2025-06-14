@@ -1,0 +1,679 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Solo Leveling – Daily Quest System</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+ --primary:#00c8ff;
+ --primary-soft:#0080ff30;
+ --danger:#ff3c57;
+ --success:#21cf6c;
+ --warning:#ffb800;
+ --bg:#050b14;
+ --text:#e7f7ff;
+ --panel:#00101caa;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body,button,input,select{font-family:"Orbitron",sans-serif;}
+body{
+ min-height:100vh;display:flex;justify-content:center;align-items:flex-start;
+ background:var(--bg);color:var(--text);padding:1.5rem;overflow-x:hidden
+}
+.glow{color:var(--primary);text-shadow:0 0 6px var(--primary),0 0 12px var(--primary)}
+.btn-glow{
+ position:relative;background:transparent;color:var(--text);border:1px solid var(--primary);
+ padding:.55rem 1.8rem;cursor:pointer;transition:.2s;font-size:.9rem;
+}
+.btn-glow::before{
+ content:"";position:absolute;inset:0;background:var(--primary-soft);
+ filter:blur(8px);opacity:0;transition:.2s
+}
+.btn-glow:hover::before{opacity:1}
+.btn-small{padding:.3rem .8rem;font-size:.8rem;}
+.panel{
+ width:100%;max-width:900px;padding:2.2rem 2rem 2.6rem;border:1px solid var(--primary);
+ background:var(--panel);backdrop-filter:blur(8px);position:relative;overflow:hidden;
+ box-shadow:0 0 8px var(--primary),inset 0 0 6px var(--primary-soft)
+}
+.panel::after{
+ content:"";position:absolute;inset:0;pointer-events:none;mix-blend-mode:overlay;
+ background-image:repeating-linear-gradient(135deg,transparent 0 28px,#ffffff0a 29px 30px)
+}
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.6rem;flex-wrap:wrap;gap:1rem}
+.header-left{display:flex;align-items:center;gap:.8rem}
+.header-icon{
+ width:32px;height:32px;border:1px solid var(--primary);display:grid;place-items:center;
+ color:var(--primary);font-weight:600;box-shadow:0 0 6px var(--primary)
+}
+.header-title{ font-size:1.4rem; } /* Base font size for header title */
+.view-controls{display:flex;gap:.5rem;align-items:center}
+.view-controls button{padding:.3rem .8rem;font-size:.8rem}
+.view-controls button.active{background:var(--primary);color:var(--bg)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem;margin-bottom:1.4rem}
+.stat-box{
+ text-align:center;border:1px solid var(--primary);padding:.4rem .3rem
+}
+.stat-box span{display:block;font-size:.8rem}
+.stat-box strong{color:var(--primary);font-size:1.1rem}
+
+/* Calendar Styles */
+.calendar-container{margin-bottom:1.5rem}
+.calendar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap; gap: 0.5rem;}
+.calendar-nav{display:flex;gap:.5rem;align-items:center; flex-wrap: wrap; justify-content:flex-end;}
+.calendar-nav button{padding:.3rem .6rem;font-size:.8rem}
+.calendar-nav select{background:var(--bg);border:1px solid var(--primary);color:var(--text);padding:.3rem .5rem}
+.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:1rem}
+.calendar-day{
+ aspect-ratio:1;display:flex;align-items:center;justify-content:center;
+ border:1px solid #ffffff22;cursor:pointer;position:relative;font-size:.8rem;
+ transition:.2s;min-height:40px;
+}
+.calendar-day:hover{border-color:var(--primary)}
+.calendar-day.today{border-color:var(--primary);background:var(--primary-soft)}
+.calendar-day.selected{background:var(--primary);color:var(--bg)}
+.calendar-day.other-month{color:#ffffff44}
+.calendar-day.has-data{background:var(--success);color:var(--bg)}
+.calendar-day.partial-data{background:var(--warning);color:var(--bg)}
+.calendar-day.no-data{background:var(--danger);color:var(--text)}
+.calendar-day-header{
+ aspect-ratio:1;display:flex;align-items:center;justify-content:center;
+ font-weight:600;color:var(--primary);font-size:.75rem;min-height:40px;
+}
+.legend{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-bottom:1rem}
+.legend-item{display:flex;align-items:center;gap:.3rem;font-size:.75rem}
+.legend-color{width:12px;height:12px;border:1px solid #ffffff44}
+
+/* Daily View */
+.daily-view{display:none}
+.daily-view.active{display:block}
+.daily-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+.daily-date{color:var(--primary);font-size:1.1rem}
+#dailyGoalBox{margin-bottom:1.1rem}
+#dailyGoalBox h3.glow {font-size:1rem;}
+.daily-view > h3.glow {font-size:1rem;}
+#progressBarWrap{
+ width:100%;height:10px;border:1px solid var(--primary);margin-top:.4rem;position:relative
+}
+#progressBar{
+ height:100%;width:0%;background:var(--primary);box-shadow:0 0 6px var(--primary)
+}
+.quest-list{margin:.9rem 0}
+.quest{
+ display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:.6rem;
+ padding:.45rem .4rem;border-bottom:1px solid #ffffff22;font-size:.93rem
+}
+.quest .count{font-size:.85rem;color:#ffffffb0}
+.quest .done{color:var(--success)}
+.quest button{
+ border:none;background:var(--primary-soft);color:var(--text);width:42px;height:30px;cursor:pointer;
+ font-size:1rem
+}
+.quest button:disabled{opacity:.5;cursor:not-allowed}
+.add-quest{margin-top:1rem;display:grid;gap:.55rem}
+.add-quest input{
+ background:transparent;border:1px solid #ffffff33;padding:.5rem;color:var(--text)
+}
+.add-quest input:focus{outline:none;border-color:var(--primary)}
+.add-quest button{justify-self:center;margin-top:.3rem}
+
+/* Calendar View */
+.calendar-view{display:none} /* Initially hidden */
+.calendar-view.active{display:block} /* Shown when active */
+
+
+@media(max-width:768px){
+  body {
+    padding: 1rem; /* Reduced body padding */
+  }
+  .panel {
+    padding: 1.5rem 1rem 2rem; /* Reduced panel padding */
+  }
+  .header{
+    flex-direction:column;
+    align-items:stretch;
+  }
+  .header-left { /* Allow title to wrap if needed */
+    flex-direction: column;
+    align-items: flex-start; /* Align icon and title to left */
+    gap: .4rem;
+  }
+  .header-title { 
+    font-size: 1.3rem; /* Slightly smaller title */
+  }
+  .view-controls{
+    justify-content:center;
+  }
+  .stats{
+    grid-template-columns:repeat(2,1fr);
+    gap: .8rem; /* Increased gap slightly */
+  }
+  .calendar-header {
+    justify-content:center; /* Center header items on small screens */
+  }
+  .calendar-nav {
+    justify-content:center; /* Center nav items on small screens */
+  }
+  .calendar-grid{
+    font-size:.7rem;
+  }
+  .calendar-day, .calendar-day-header { 
+    min-height:35px; 
+    font-size: .70rem; /* Standardize font size */
+    padding: 1px; /* Add small padding if text is cramped */
+  }
+  .legend {
+    font-size: .7rem; /* Smaller legend text */
+    gap: .5rem .8rem; /* Adjust gap for wrapping */
+  }
+  .quest {
+    font-size: .85rem; /* Smaller quest font */
+    padding: .4rem .3rem; /* Adjust padding */
+    gap: .5rem;
+  }
+  .quest .count {
+    font-size: .75rem;
+  }
+  .quest button {
+    width: 38px; /* Slightly smaller button */
+    height: 28px;
+    font-size: .9rem;
+  }
+  .add-quest input {
+    padding: .4rem;
+    font-size: .85rem;
+  }
+  .btn-glow {
+    padding: .5rem 1.5rem; /* Adjust general button padding */
+    font-size: .85rem;
+  }
+  .btn-small{
+    padding:.25rem .7rem; /* Adjust small button padding */
+    font-size:.75rem;
+  }
+  .daily-date {
+    font-size: 1rem;
+  }
+  #dailyGoalBox h3.glow, .daily-view > h3.glow { /* Target specific headers */
+    font-size: .9rem;
+  }
+}
+
+body::before{
+ content:"";position:fixed;inset:-50vmax;
+ background:radial-gradient(circle,#00d5ff11 0%,transparent 70%),
+ repeating-linear-gradient(115deg,transparent 0 70px,#00c8ff05 71px 72px),
+ repeating-linear-gradient(65deg,transparent 0 90px,#00c8ff05 91px 92px);
+ animation:bgMove 18s linear infinite;pointer-events:none; z-index: -1;
+}
+@keyframes bgMove{0%{transform:translate(0,0)}100%{transform:translate(200px,300px)}}
+</style>
+</head>
+<body>
+
+<section class="panel">
+ <header class="header">
+  <div class="header-left">
+   <div class="header-icon">!</div>
+   <h1 class="header-title glow">Daily Quest System</h1>
+  </div>
+  <div class="view-controls">
+   <button class="btn-glow btn-small active" data-view="daily">Aujourd'hui</button>
+   <button class="btn-glow btn-small" data-view="calendar">Calendrier</button>
+   <!-- Removed History Button -->
+  </div>
+ </header>
+
+ <!-- Stats globales -->
+ <div class="stats">
+  <div class="stat-box"><span>LEVEL</span><strong id="level">1</strong></div>
+  <div class="stat-box"><span>EXP</span><strong id="exp">0</strong></div>
+  <div class="stat-box"><span>QUÊTES</span><strong id="questCount">0</strong></div>
+  <div class="stat-box"><span>STREAK</span><strong id="streak">0</strong></div>
+ </div>
+
+ <!-- Vue Quotidienne -->
+ <div class="daily-view active" id="dailyView">
+  <div class="daily-header">
+   <div class="daily-date" id="currentDate">Aujourd'hui</div>
+  </div>
+  
+  <div id="dailyGoalBox">
+   <h3 class="glow">Objectif du jour : <span id="goalTxt">Terminer toutes les quêtes</span></h3>
+   <div id="progressBarWrap"><div id="progressBar"></div></div>
+   <div style="font-size:.8rem;margin-top:.2rem;"><span id="doneTotal">0</span>/<span id="totalTotal">0</span></div>
+  </div>
+
+  <h3 class="glow">Quêtes quotidiennes</h3>
+  <div id="questList" class="quest-list"></div>
+
+  <form id="questForm" class="add-quest" autocomplete="off">
+   <input type="text" id="questName" placeholder="Nom de la quête" required>
+   <input type="number" id="questGoal" placeholder="Objectif (ex : 100)" min="1" required>
+   <button type="submit" class="btn-glow">Ajouter la quête</button>
+  </form>
+ </div>
+
+ <!-- Vue Calendrier -->
+ <div class="calendar-view" id="calendarView" style="display:none;">
+  <div class="calendar-container">
+   <div class="calendar-header">
+    <h3 class="glow">Calendrier des Quêtes</h3>
+    <div class="calendar-nav">
+     <button class="btn-glow btn-small" id="prevMonth">&lt;</button>
+     <select id="monthSelect" class="btn-glow"></select>
+     <select id="yearSelect" class="btn-glow"></select>
+     <button class="btn-glow btn-small" id="nextMonth">&gt;</button>
+    </div>
+   </div>
+   
+   <div class="legend">
+    <div class="legend-item">
+     <div class="legend-color" style="background:var(--success)"></div>
+     <span>Toutes les quêtes terminées</span>
+    </div>
+    <div class="legend-item">
+     <div class="legend-color" style="background:var(--warning)"></div>
+     <span>Partiellement terminé</span>
+    </div>
+    <div class="legend-item">
+     <div class="legend-color" style="background:var(--danger)"></div>
+     <span>Aucune quête terminée</span>
+    </div>
+    <div class="legend-item">
+     <div class="legend-color" style="background:var(--primary)"></div>
+     <span>Aujourd'hui</span>
+    </div>
+   </div>
+   
+   <div class="calendar-grid" id="calendarGrid"></div>
+  </div>
+ </div>
+
+ <!-- Vue Historique REMOVED -->
+
+</section>
+
+<script>
+/* ========= DATA & PERSISTENCE ========= */
+const STORAGE_KEY = "soloLeveling_daily";
+const HISTORY_KEY = "soloLeveling_history"; // Still needed for calendar
+const todayStr = new Date().toISOString().slice(0,10);
+
+let data = {date: todayStr, streak: 0, level: 1, exp: 0, quests: [], allDone: false};
+let history = {}; // {date: {quests, completed, total, allDone, level, exp, streak}} - Still needed for calendar
+let currentView = 'daily';
+let selectedDate = todayStr;
+let calendarDate = new Date();
+
+function load() {
+  // Load daily data
+  let savedData = null;
+  const rawData = localStorage.getItem(STORAGE_KEY);
+  if (rawData) {
+    try {
+      savedData = JSON.parse(rawData);
+    } catch (e) {
+      console.error("Error parsing daily data from localStorage:", e);
+      localStorage.removeItem(STORAGE_KEY); // Clear corrupted data
+    }
+  }
+
+  // Load history data (for calendar)
+  let loadedHistory = {};
+  const rawHistory = localStorage.getItem(HISTORY_KEY);
+  if (rawHistory) {
+    try {
+      loadedHistory = JSON.parse(rawHistory);
+    } catch (e) {
+      console.error("Error parsing history data from localStorage:", e);
+      localStorage.removeItem(HISTORY_KEY); // Clear corrupted data
+    }
+  }
+  history = loadedHistory; 
+
+  if (savedData && savedData.date === todayStr) {
+    data = savedData;
+  } else {
+    if (savedData && savedData.date && typeof savedData.date === 'string') { 
+      const questsToArchive = Array.isArray(savedData.quests) ? savedData.quests : [];
+      history[savedData.date] = {
+        quests: questsToArchive,
+        completed: questsToArchive.filter(q => q.progress >= q.goal).length,
+        total: questsToArchive.length,
+        allDone: savedData.allDone || false,
+        level: savedData.level || 1,     
+        exp: savedData.exp || 0,        
+        streak: savedData.streak || 0   
+      };
+    }
+    
+    let initialStreak = 0;
+    let initialLevel = 1;
+    let initialExp = 0;
+
+    if (savedData && savedData.date && typeof savedData.date === 'string') {
+        initialLevel = savedData.level || 1;
+        initialExp = savedData.exp || 0;
+        if (savedData.allDone) {
+            initialStreak = (savedData.streak || 0) + 1;
+        }
+    }
+    
+    data = {
+      date: todayStr,
+      streak: initialStreak,
+      level: initialLevel,
+      exp: initialExp,
+      quests: [],
+      allDone: false
+    };
+  }
+  save(); 
+}
+
+
+function save() {
+ localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+ localStorage.setItem(HISTORY_KEY, JSON.stringify(history)); // Still save history for calendar
+}
+
+/* ========= UI REFERENCES ========= */
+const questList = document.getElementById("questList");
+const questForm = document.getElementById("questForm");
+const questName = document.getElementById("questName");
+const questGoal = document.getElementById("questGoal");
+const questCount = document.getElementById("questCount");
+const doneTotal = document.getElementById("doneTotal");
+const totalTotal = document.getElementById("totalTotal");
+const progressBar = document.getElementById("progressBar");
+const streakEl = document.getElementById("streak");
+const levelEl = document.getElementById("level");
+const expEl = document.getElementById("exp");
+const currentDateEl = document.getElementById("currentDate");
+const calendarGrid = document.getElementById("calendarGrid");
+const monthSelect = document.getElementById("monthSelect");
+const yearSelect = document.getElementById("yearSelect");
+
+/* ========= VIEW MANAGEMENT ========= */
+function switchView(view) {
+ currentView = view;
+ document.querySelectorAll('.view-controls button').forEach(btn => {
+  btn.classList.toggle('active', btn.dataset.view === view);
+ });
+ 
+ document.querySelectorAll('.daily-view, .calendar-view').forEach(el => { // Removed .history-view
+  el.classList.remove('active');
+  // Explicitly hide non-active views using style.display for robustness
+  if (!el.classList.contains(view + '-view')) {
+      el.style.display = 'none';
+  }
+ });
+ 
+ const viewElement = document.getElementById(view + 'View');
+ if (viewElement) {
+    viewElement.classList.add('active');
+    viewElement.style.display = 'block'; // Ensure active view is displayed
+ }
+ 
+ if (view === 'calendar') renderCalendar();
+ // if (view === 'history') renderHistory(); // Removed call to renderHistory
+ if (view === 'daily') renderDaily();
+}
+
+/* ========= DAILY VIEW ========= */
+function renderDaily() {
+ const isToday = selectedDate === todayStr;
+ // For past dates, get data from history; for today, use current 'data'
+ const dayDataToRender = isToday ? data : (history[selectedDate] || {quests: [], date: selectedDate, allDone: false });
+ 
+ currentDateEl.textContent = isToday ? 'Aujourd\'hui' : formatDate(selectedDate);
+ 
+ questList.innerHTML = "";
+ const questsForDay = Array.isArray(dayDataToRender.quests) ? dayDataToRender.quests : [];
+
+ questsForDay.forEach((q, i) => {
+  const row = document.createElement("div");
+  row.className = "quest";
+  const done = q.progress >= q.goal;
+  row.innerHTML = \`
+   <span>\${q.name}</span>
+   <span class="count">\${q.progress}/\${q.goal}</span>
+   <button data-i="\${i}" \${!isToday || done ? 'disabled' : ''}>+1</button>\`;
+  if (done) {
+   row.querySelector("span").classList.add("done");
+   row.querySelector(".count").classList.add("done");
+   const button = row.querySelector("button");
+   if (button) button.disabled = true;
+  }
+  questList.appendChild(row);
+ });
+ 
+ questCount.textContent = questsForDay.length; // This will now reflect today's quests or selected past day's quests
+ const completed = questsForDay.filter(q => q.progress >= q.goal).length;
+ doneTotal.textContent = completed;
+ totalTotal.textContent = questsForDay.length;
+ const pct = questsForDay.length ? (completed / questsForDay.length * 100) : 0;
+ progressBar.style.width = pct + "%";
+ 
+ questForm.style.display = isToday ? 'grid' : 'none';
+ 
+ // Always show current player stats (from 'data' object) at the top
+ streakEl.textContent = data.streak;
+ levelEl.textContent = data.level;
+ expEl.textContent = data.exp;
+}
+
+/* ========= CALENDAR VIEW ========= */
+function renderCalendar() {
+ const year = calendarDate.getFullYear();
+ const month = calendarDate.getMonth();
+ 
+ monthSelect.innerHTML = '';
+ for (let i = 0; i < 12; i++) {
+  const option = document.createElement('option');
+  option.value = i;
+  option.textContent = new Date(2024, i, 1).toLocaleDateString('fr-FR', {month: 'long'});
+  option.selected = i === month;
+  monthSelect.appendChild(option);
+ }
+ 
+ yearSelect.innerHTML = '';
+ const yearsInHistory = Object.keys(history).map(date => new Date(date).getFullYear()).filter(y => !isNaN(y));
+ const currentFullYear = new Date().getFullYear();
+ let minYearInHistory = yearsInHistory.length > 0 ? Math.min(...yearsInHistory) : currentFullYear;
+ let maxYearInHistory = yearsInHistory.length > 0 ? Math.max(...yearsInHistory) : currentFullYear;
+
+ const minYear = Math.min(2020, minYearInHistory, currentFullYear);
+ const maxYear = Math.max(new Date().getFullYear() + 5, maxYearInHistory, currentFullYear); // Show a few future years
+
+
+ for (let y = minYear; y <= maxYear; y++) {
+  const option = document.createElement('option');
+  option.value = y;
+  option.textContent = y;
+  option.selected = y === year;
+  yearSelect.appendChild(option);
+ }
+ 
+ const firstDayOfMonth = new Date(year, month, 1);
+ const lastDayOfMonth = new Date(year, month + 1, 0);
+ 
+ let firstDayOfWeek = firstDayOfMonth.getDay(); // 0 for Sunday
+ // firstDayOfWeek = (firstDayOfWeek === 0) ? 6 : firstDayOfWeek - 1; // Adjust to make Monday the first day (0=Mon, 6=Sun)
+
+ calendarGrid.innerHTML = '';
+ 
+ const dayHeaders = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+ // const dayHeaders = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']; // If Monday is first
+ dayHeaders.forEach(day => {
+  const header = document.createElement('div');
+  header.className = 'calendar-day-header';
+  header.textContent = day;
+  calendarGrid.appendChild(header);
+ });
+ 
+ const daysInPrevMonth = new Date(year, month, 0).getDate();
+ const numDaysToDisplay = 42; // Always display 6 weeks for consistency
+
+
+ for (let i = 0; i < numDaysToDisplay; i++) {
+    const dayCell = document.createElement('div');
+    dayCell.className = 'calendar-day';
+    
+    // Calculate the actual date for the cell
+    // i is the cell index (0-41)
+    // firstDayOfWeek is the weekday of the 1st of the month (0=Sun, 1=Mon, ..., 6=Sat)
+    // The date for cell 'i' is: 1st_of_month_date + (i - firstDayOfWeek)
+    const currentCellDate = new Date(year, month, 1); // Start with the 1st of the current month
+    currentCellDate.setDate(1 + (i - firstDayOfWeek)); // Adjust to the correct day
+
+    dayCell.textContent = currentCellDate.getDate();
+    const dateStr = currentCellDate.toISOString().slice(0, 10);
+    dayCell.dataset.date = dateStr;
+
+    if (currentCellDate.getMonth() !== month) {
+        dayCell.classList.add('other-month');
+    }
+
+    if (dateStr === todayStr) {
+        dayCell.classList.add('today');
+    }
+
+    if (dateStr === selectedDate) {
+        dayCell.classList.add('selected');
+    }
+
+    // Use 'history' for past/future dates, 'data' for today
+    const dayHistoryData = dateStr === todayStr ? data : history[dateStr];
+
+    if (dayHistoryData && Array.isArray(dayHistoryData.quests) && dayHistoryData.quests.length > 0) {
+        const completedQuests = dayHistoryData.quests.filter(q => q.progress >= q.goal).length;
+        const totalQuests = dayHistoryData.quests.length;
+
+        if (dayHistoryData.allDone || (completedQuests === totalQuests && totalQuests > 0)) {
+            dayCell.classList.add('has-data'); // All done
+        } else if (completedQuests > 0) {
+            dayCell.classList.add('partial-data'); // Partially done
+        } else {
+            dayCell.classList.add('no-data'); // None done (but quests exist)
+        }
+    } else if (currentCellDate.getMonth() === month && dateStr < todayStr && !history[dateStr]) {
+        // Explicitly mark past days in the current month with no logged quests as 'no-data'
+        dayCell.classList.add('no-data');
+    }
+  
+  dayCell.addEventListener('click', () => {
+   selectedDate = dateStr;
+   switchView('daily'); 
+  });
+  
+  calendarGrid.appendChild(dayCell);
+ }
+}
+
+
+/* ========= HISTORY VIEW - REMOVED ========= */
+// function renderHistory() { ... } // Entire function removed
+
+/* ========= EVENTS ========= */
+document.querySelectorAll('.view-controls button').forEach(btn => {
+ btn.addEventListener('click', () => switchView(btn.dataset.view));
+});
+
+document.getElementById('prevMonth').addEventListener('click', () => {
+ calendarDate.setMonth(calendarDate.getMonth() - 1);
+ renderCalendar();
+});
+
+document.getElementById('nextMonth').addEventListener('click', () => {
+ calendarDate.setMonth(calendarDate.getMonth() + 1);
+ renderCalendar();
+});
+
+monthSelect.addEventListener('change', (e) => {
+ calendarDate.setMonth(parseInt(e.target.value));
+ renderCalendar();
+});
+
+yearSelect.addEventListener('change', (e) => {
+ calendarDate.setFullYear(parseInt(e.target.value));
+ renderCalendar();
+});
+
+questForm.addEventListener("submit", e => {
+ e.preventDefault();
+ if (selectedDate !== todayStr) return; 
+ 
+ const nameValue = questName.value.trim();
+ const goalValue = parseInt(questGoal.value, 10);
+ 
+ if (!nameValue || isNaN(goalValue) || goalValue < 1) {
+    alert("Veuillez entrer un nom de quête valide et un objectif numérique positif.");
+    return;
+ }
+ 
+ data.quests.push({name: nameValue, goal: goalValue, progress: 0});
+ data.allDone = false; 
+ questName.value = "";
+ questGoal.value = "";
+ renderDaily();
+ save();
+});
+
+questList.addEventListener("click", e => {
+ if (selectedDate !== todayStr || e.target.tagName !== "BUTTON" || e.target.disabled) return;
+ 
+ const questIndex = parseInt(e.target.dataset.i, 10);
+ const quest = data.quests[questIndex];
+ 
+ if (quest && quest.progress < quest.goal) {
+  quest.progress++;
+  if (quest.progress === quest.goal) {
+   data.exp += 10; 
+   if (data.exp >= 100) { 
+    data.level++;
+    data.exp -= 100; 
+   }
+  }
+ }
+ 
+ data.allDone = data.quests.length > 0 && data.quests.every(q => q.progress >= q.goal);
+ renderDaily();
+ save();
+});
+
+function formatDate(dateStr) { 
+ if (!dateStr || typeof dateStr !== 'string' || !dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    return "Date invalide";
+ }
+ return new Date(dateStr + 'T00:00:00').toLocaleDateString('fr-FR', {
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric'
+ });
+}
+
+/* ========= INIT ========= */
+load();
+// Ensure the initially active view (daily) is correctly displayed
+const initialViewElement = document.getElementById(currentView + 'View');
+if (initialViewElement) {
+    initialViewElement.style.display = 'block';
+}
+// Hide other views explicitly
+document.querySelectorAll('.calendar-view').forEach(el => {
+    if (!el.classList.contains(currentView + '-view')) {
+        el.style.display = 'none';
+    }
+});
+
+switchView(currentView); // Render the initial view
+</script>
+
+</body>
+</html>
