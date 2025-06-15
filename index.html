@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Solo Leveling – Daily Quest System</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+ --primary:#00c8ff;
+ --primary-soft:#0080ff30;
+ --danger:#ff3c57;
+ --success:#21cf6c;
+ --warning:#ffb800;
+ --bg:#050b14;
+ --text:#e7f7ff;
+ --panel:#00101caa;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body,button,input,select{font-family:"Orbitron",sans-serif;}
+body{
+ min-height:100vh;display:flex;justify-content:center;align-items:flex-start;
+ background:var(--bg);color:var(--text);padding:1.5rem;overflow-x:hidden
+}
+.glow{color:var(--primary);text-shadow:0 0 6px var(--primary),0 0 12px var(--primary)}
+.btn-glow{
+ position:relative;background:transparent;color:var(--text);border:1px solid var(--primary);
+ padding:.55rem 1.8rem;cursor:pointer;transition:.2s;font-size:.9rem;
+}
+.btn-glow::before{
+ content:"";position:absolute;inset:0;background:var(--primary-soft);
+ filter:blur(8px);opacity:0;transition:.2s
+}
+.btn-glow:hover::before{opacity:1}
+.btn-small{padding:.3rem .8rem;font-size:.8rem;}
+.panel{
+ width:100%;max-width:900px;padding:2.2rem 2rem 2.6rem;border:1px solid var(--primary);
+ background:var(--panel);backdrop-filter:blur(8px);position:relative;overflow:hidden;
+ box-shadow:0 0 8px var(--primary),inset 0 0 6px var(--primary-soft)
+}
+.panel::after{
+ content:"";position:absolute;inset:0;pointer-events:none;mix-blend-mode:overlay;
+ background-image:repeating-linear-gradient(135deg,transparent 0 28px,#ffffff0a 29px 30px)
+}
+.header{display:flex;align-items:center;justify-content:flex-start;margin-bottom:1.6rem;flex-wrap:wrap;gap:1rem}
+.header-left{display:flex;align-items:center;gap:.8rem}
+.header-icon{
+ width:32px;height:32px;border:1px solid var(--primary);display:grid;place-items:center;
+ color:var(--primary);font-weight:600;box-shadow:0 0 6px var(--primary)
+}
+.header-title{ font-size:1.4rem; }
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem;margin-bottom:1.4rem}
+.stat-box{
+ text-align:center;border:1px solid var(--primary);padding:.4rem .3rem
+}
+.stat-box span{display:block;font-size:.8rem}
+.stat-box strong{color:var(--primary);font-size:1.1rem}
+
+/* Calendar Styles */
+#calendarContainer {
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--primary-soft);
+  padding: 1rem;
+}
+#calendarHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.8rem;
+}
+#calendarHeader button {
+  background: var(--primary-soft);
+  color: var(--text);
+  border: 1px solid var(--primary);
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+#calendarHeader button:hover {
+  background: var(--primary);
+  color: var(--bg);
+}
+#monthYearDisplay {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+#calendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.calendar-day-header, .calendar-day {
+  text-align: center;
+  padding: 0.4rem;
+  font-size: 0.8rem;
+}
+.calendar-day-header {
+  font-weight: 600;
+  color: var(--primary);
+}
+.calendar-day {
+  border: 1px solid var(--primary-soft);
+  cursor: pointer;
+  position: relative; /* For status dots */
+}
+.calendar-day:hover {
+  background: var(--primary-soft);
+}
+.calendar-day.empty {
+  cursor: default;
+  background: none;
+  border: none;
+}
+.calendar-day.today {
+  border-color: var(--primary);
+  box-shadow: 0 0 5px var(--primary);
+  font-weight: bold;
+}
+.calendar-day.selected {
+  background: var(--primary);
+  color: var(--bg);
+  font-weight: bold;
+}
+.calendar-day .status-dot {
+    position: absolute;
+    bottom: 3px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+.status-dot.completed { background-color: var(--success); }
+.status-dot.partial { background-color: var(--warning); }
+/* End Calendar Styles */
+
+.daily-view{display:block}
+.daily-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+.daily-date-display{color:var(--primary);font-size:1.1rem} /* Renamed from currentDateDisplay */
+#dailyGoalBox{margin-bottom:1.1rem}
+#dailyGoalBox h3.glow {font-size:1rem;}
+.daily-view > h3.glow {font-size:1rem;}
+#progressBarWrap{
+ width:100%;height:10px;border:1px solid var(--primary);margin-top:.4rem;position:relative
+}
+#progressBar{
+ height:100%;width:0%;background:var(--primary);box-shadow:0 0 6px var(--primary); transition: width 0.3s ease;
+}
+.quest-list{margin:.9rem 0}
+.quest{
+ display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:.6rem;
+ padding:.45rem .4rem;border-bottom:1px solid #ffffff22;font-size:.93rem
+}
+.quest .count{font-size:.85rem;color:#ffffffb0}
+.quest .done{color:var(--success); text-decoration: line-through;}
+.quest button{
+ border:none;background:var(--primary-soft);color:var(--text);width:42px;height:30px;cursor:pointer;
+ font-size:1rem
+}
+.quest button:disabled{opacity:.5;cursor:not-allowed}
+.add-quest{margin-top:1rem;display:grid;gap:.55rem}
+.add-quest input{
+ background:transparent;border:1px solid #ffffff33;padding:.5rem;color:var(--text)
+}
+.add-quest input:focus{outline:none;border-color:var(--primary)}
+.add-quest button{justify-self:center;margin-top:.3rem}
+
+@media(max-width:768px){
+  body {
+    padding: 1rem;
+  }
+  .panel {
+    padding: 1.5rem 1rem 2rem; 
+  }
+  .header{
+    flex-direction:column;
+    align-items:stretch;
+  }
+  .header-left { 
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .4rem;
+  }
+  .header-title { 
+    font-size: 1.3rem; 
+  }
+  .stats{
+    grid-template-columns:repeat(2,1fr);
+    gap: .8rem; 
+  }
+   #calendarHeader button {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+  }
+  #monthYearDisplay {
+    font-size: 1rem;
+  }
+  .calendar-day-header, .calendar-day {
+    padding: 0.3rem;
+    font-size: 0.75rem;
+  }
+  .quest {
+    font-size: .85rem; 
+    padding: .4rem .3rem; 
+    gap: .5rem;
+  }
+  .quest .count {
+    font-size: .75rem;
+  }
+  .quest button {
+    width: 38px; 
+    height: 28px;
+    font-size: .9rem;
+  }
+  .add-quest input {
+    padding: .4rem;
+    font-size: .85rem;
+  }
+  .btn-glow {
+    padding: .5rem 1.5rem; 
+    font-size: .85rem;
+  }
+  .btn-small{
+    padding:.25rem .7rem; 
+    font-size:.75rem;
+  }
+  .daily-date-display { /* Renamed */
+    font-size: 1rem;
+  }
+  #dailyGoalBox h3.glow, .daily-view > h3.glow { 
+    font-size: .9rem;
+  }
+}
+
+body::before{
+ content:"";position:fixed;inset:-50vmax;
+ background:radial-gradient(circle,#00d5ff11 0%,transparent 70%),
+ repeating-linear-gradient(115deg,transparent 0 70px,#00c8ff05 71px 72px),
+ repeating-linear-gradient(65deg,transparent 0 90px,#00c8ff05 91px 92px);
+ animation:bgMove 18s linear infinite;pointer-events:none; z-index: -1;
+}
+@keyframes bgMove{0%{transform:translate(0,0)}100%{transform:translate(200px,300px)}}
+</style>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+
+<section class="panel">
+ <header class="header">
+  <div class="header-left">
+   <div class="header-icon">!</div>
+   <h1 class="header-title glow">Daily Quest System</h1>
+  </div>
+ </header>
+
+  <div id="calendarContainer">
+    <div id="calendarHeader">
+      <button id="prevMonthBtn">&lt; Préc</button>
+      <div id="monthYearDisplay"></div>
+      <button id="nextMonthBtn">Suiv &gt;</button>
+    </div>
+    <div id="calendarGrid"></div>
+  </div>
+
+ <div class="stats">
+  <div class="stat-box"><span>LEVEL</span><strong id="levelStat">1</strong></div>
+  <div class="stat-box"><span>EXP</span><strong id="expStat">0</strong></div>
+  <div class="stat-box"><span>QUÊTES (JOUR)</span><strong id="questCountStat">0</strong></div>
+  <div class="stat-box"><span>STREAK</span><strong id="streakStat">0</strong></div>
+ </div>
+
+ <div class="daily-view" id="dailyView">
+  <div class="daily-header">
+   <div class="daily-date-display" id="selectedDateDisplay">Aujourd'hui</div> <!-- Renamed and content will be dynamic -->
+  </div>
+  
+  <div id="dailyGoalBox">
+   <h3 class="glow">Objectif du jour : <span id="goalTxt">Terminer toutes les quêtes</span></h3>
+   <div id="progressBarWrap"><div id="progressBar"></div></div>
+   <div style="font-size:.8rem;margin-top:.2rem;"><span id="doneTotalDisplay">0</span>/<span id="totalTotalDisplay">0</span></div>
+  </div>
+
+  <h3 class="glow">Quêtes quotidiennes</h3>
+  <div id="questListContainer" class="quest-list"></div>
+
+  <form id="addQuestForm" class="add-quest" autocomplete="off">
+   <input type="text" id="newQuestName" placeholder="Nom de la quête" required>
+   <input type="number" id="newQuestGoal" placeholder="Objectif (ex : 100)" min="1" required>
+   <button type="submit" class="btn-glow">Ajouter la quête</button>
+  </form>
+ </div>
+
+</section>
+
+<script type="module" src="index.js" defer></script>
+
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>
